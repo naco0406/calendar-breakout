@@ -1,0 +1,47 @@
+/* Google Calendar inspired scrollbar styling */
+.calendarScrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 64, 67, 0.3) transparent;
+}
+
+.calendarScrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.calendarScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.calendarScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(60, 64, 67, 0.3);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.calendarScrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 64, 67, 0.5);
+}
+
+.calendarScrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Smooth scrolling behavior */
+.calendarScrollbar {
+  scroll-behavior: smooth;
+}
+
+/* Mobile optimized scrolling */
+@media (max-width: 768px) {
+  .calendarScrollbar {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  .calendarScrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
