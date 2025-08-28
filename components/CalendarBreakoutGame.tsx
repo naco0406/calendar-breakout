@@ -13,11 +13,11 @@ import EnhancedGameOverlay from '@/components/game/EnhancedGameOverlay';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import CalendarBody from '@/components/calendar/CalendarBody';
 import PowerUps, { PowerUp } from '@/components/game/PowerUps';
-import ComboDisplay from '@/components/game/ComboDisplay';
+// import ComboDisplay from '@/components/game/ComboDisplay';
 import Tutorial from '@/components/game/Tutorial';
 import { useGamePhysics } from '@/hooks/useGamePhysics';
 import { useOptimizedGameLoop } from '@/hooks/useOptimizedGameLoop';
-import { checkCircleRectCollision, applyCollisionResponse, calculatePaddleReflection } from '@/utils/physics';
+import { checkCircleRectCollision, applyCollisionResponse } from '@/utils/physics';
 import { GameState, Ball, Paddle } from '@/types/game';
 
 
@@ -63,7 +63,7 @@ const CalendarBreakoutGame = () => {
   const [destroyedEvents, setDestroyedEvents] = useState<Set<string>>(new Set());
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [combo, setCombo] = useState(0);
-  const [maxCombo, setMaxCombo] = useState(0);
+  // const [maxCombo, setMaxCombo] = useState(0);
   const [showTutorial, setShowTutorial] = useState(() => {
     const hasSeenTutorial = typeof window !== 'undefined' ? localStorage.getItem('hasSeenTutorial') : null;
     return !hasSeenTutorial;
@@ -300,7 +300,7 @@ const CalendarBreakoutGame = () => {
         return true;
       });
     });
-  }, [gameState.gameStatus, soundEnabled, dimensions, screenDimensions, isMobile, paddle.x, activeEvents.length, updatePowerUps, checkPaddlePowerUpCollision, handlePowerUpCollection]);
+  }, [gameState.gameStatus, soundEnabled, dimensions, screenDimensions, isMobile, paddle, updatePowerUps, checkPaddlePowerUpCollision, handlePowerUpCollection]);
 
   // Use optimized game loop
   useOptimizedGameLoop({
@@ -323,7 +323,7 @@ const CalendarBreakoutGame = () => {
       // Update combo
       setCombo(prev => {
         const newCombo = prev + 1;
-        setMaxCombo(max => Math.max(max, newCombo));
+        // setMaxCombo(max => Math.max(max, newCombo));
         return newCombo;
       });
       
@@ -467,7 +467,7 @@ const CalendarBreakoutGame = () => {
       speed: 8,
     });
     setCombo(0);
-    setMaxCombo(0);
+    // setMaxCombo(0);
     setPowerUps([]);
   }, [screenDimensions, isMobile, dimensions]);
 

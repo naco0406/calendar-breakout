@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import Matter from 'matter-js';
 import { CalendarEvent } from '@/types/calendar';
@@ -35,7 +35,7 @@ export default function PixiGame({
   onEventDestroyed,
   onScoreUpdate,
   onLivesUpdate,
-  onGameOver,
+  onGameOver, // eslint-disable-line @typescript-eslint/no-unused-vars
   onVictory,
   gameState,
   soundEnabled,
@@ -54,7 +54,7 @@ export default function PixiGame({
   const eventSpritesRef = useRef<Map<string, PIXI.Graphics>>(new Map());
   
   const [combo, setCombo] = useState(0);
-  const [powerUps, setPowerUps] = useState<Array<any>>([]);
+  // const [powerUps, setPowerUps] = useState<Array<{ id: string; type: string; x: number; y: number }>>([]);
 
   // Initialize Pixi.js and Matter.js
   useEffect(() => {
@@ -286,16 +286,20 @@ export default function PixiGame({
 
     app.ticker.add(gameLoop);
 
+    const currentContainer = containerRef.current;
+    
     // Cleanup
     return () => {
+      const view = app.view;
+      
       app.ticker.remove(gameLoop);
       Matter.Events.off(engine, 'collisionStart');
       app.destroy(true, { children: true });
-      if (containerRef.current && app.view) {
-        containerRef.current.removeChild(app.view as HTMLCanvasElement);
+      if (currentContainer && view) {
+        currentContainer.removeChild(view as HTMLCanvasElement);
       }
     };
-  }, [screenDimensions, dimensions, isMobile, soundEnabled]);
+  }, [screenDimensions, dimensions, isMobile, soundEnabled, gameState.gameStatus, combo, destroyedEvents, events.length, onEventDestroyed, onLivesUpdate, onScoreUpdate, onVictory]);
 
   // Handle mouse/touch movement
   useEffect(() => {

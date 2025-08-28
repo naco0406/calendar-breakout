@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Box } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -26,7 +26,7 @@ const MotionBox = motion(Box);
 export default function UltraHUD({
   gameState,
   soundEnabled,
-  onStartGame,
+  onStartGame, // eslint-disable-line @typescript-eslint/no-unused-vars
   onPauseGame,
   onResumeGame,
   onResetGame,

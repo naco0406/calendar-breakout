@@ -11,7 +11,6 @@ import { useState, useEffect } from 'react';
 
 const MotionBox = motion(Box);
 const MotionTypography = motion(Typography);
-const MotionPaper = motion(Paper);
 
 export default function HomePage() {
   const router = useRouter();
@@ -81,8 +80,8 @@ export default function HomePage() {
             scale: { duration: 3 + i, repeat: Infinity, ease: "easeInOut" }
           }}
           initial={{
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
+            x: Math.random() * 1000,
+            y: Math.random() * 800,
           }}
         />
       ))}

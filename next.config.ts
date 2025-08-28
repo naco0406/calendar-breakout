@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Performance optimizations
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Typography, IconButton, Fade, Collapse } from '@mui/material';
+import { Box, Typography, IconButton } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
