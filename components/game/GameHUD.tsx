@@ -33,7 +33,7 @@ export default function GameHUD({
   isMobile,
 }: GameHUDProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const isExpanded = isHovered || gameState.status !== 'playing';
+  const isExpanded = isHovered || gameState.gameStatus !== 'playing';
 
   return (
     <motion.div
@@ -138,7 +138,7 @@ export default function GameHUD({
                   gap: 0.8,
                   alignItems: 'center',
                 }}>
-                  {gameState.status === 'idle' && (
+                  {gameState.gameStatus === 'idle' && (
                     <IconButton 
                       onClick={onStartGame} 
                       size="small"
@@ -155,7 +155,7 @@ export default function GameHUD({
                       <PlayArrowIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
                     </IconButton>
                   )}
-                  {gameState.status === 'playing' && (
+                  {gameState.gameStatus === 'playing' && (
                     <IconButton 
                       onClick={onPauseGame} 
                       size="small"
@@ -172,7 +172,7 @@ export default function GameHUD({
                       <PauseIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
                     </IconButton>
                   )}
-                  {gameState.status === 'paused' && (
+                  {gameState.gameStatus === 'paused' && (
                     <IconButton 
                       onClick={onResumeGame} 
                       size="small"
@@ -229,7 +229,7 @@ export default function GameHUD({
 
           {/* Hover hint */}
           <AnimatePresence>
-            {!isExpanded && gameState.status === 'playing' && (
+            {!isExpanded && gameState.gameStatus === 'playing' && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

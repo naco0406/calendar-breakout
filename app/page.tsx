@@ -1,7 +1,8 @@
 'use client';
 
-import { Box, Typography, Button, Container, Grid, Paper } from '@mui/material';
-import { motion } from 'framer-motion';
+import { Box, Typography, Button, Container, Paper } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { motion, Variants } from 'framer-motion';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -25,7 +26,7 @@ export default function HomePage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -36,16 +37,16 @@ export default function HomePage() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
+              transition: {
+          type: "spring",
+          stiffness: 300,
+          damping: 24
+        }
     }
   };
 
@@ -99,8 +100,8 @@ export default function HomePage() {
             py: { xs: 4, md: 8 },
           }}
         >
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={itemVariants}>
                 <MotionTypography
                   variant="h1"
@@ -242,7 +243,7 @@ export default function HomePage() {
               </motion.div>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <MotionBox
                 sx={{ 
                   position: 'relative',
@@ -263,9 +264,9 @@ export default function HomePage() {
                   }}
                   transition={{ type: "spring", stiffness: 50 }}
                 >
-                  <Grid container spacing={2} sx={{ height: '100%' }}>
+                  <Grid container spacing={2}>
                     {[...Array(6)].map((_, i) => (
-                      <Grid item xs={6} sm={4} key={i}>
+                      <Grid size={{ xs: 6, sm: 4 }} key={i}>
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -343,7 +344,7 @@ export default function HomePage() {
 
           {/* Features */}
           <motion.div variants={itemVariants}>
-            <Grid container spacing={3} sx={{ mt: { xs: 4, md: 8 } }}>
+            <Grid container spacing={3}>
               {[
                 {
                   title: 'Break Events',
@@ -364,7 +365,7 @@ export default function HomePage() {
                   color: '#f093fb',
                 },
               ].map((feature, index) => (
-                <Grid item xs={12} md={4} key={index}>
+                <Grid size={{ xs: 12, md: 4 }} key={index}>
                   <motion.div
                     whileHover={{ y: -8 }}
                     transition={{ type: "spring", stiffness: 300 }}
@@ -412,7 +413,7 @@ export default function HomePage() {
                           repeat: Infinity,
                           repeatDelay: 2,
                         }}
-                        style={{ fontSize: { xs: 48, sm: 60 }, marginBottom: 16 }}
+                        style={{ fontSize: 48, marginBottom: 16 }}
                       >
                         {feature.icon}
                       </motion.div>

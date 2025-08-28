@@ -233,7 +233,7 @@ export default function PixiGame({
 
     // Game loop
     const gameLoop = () => {
-      if (gameState.status === 'playing') {
+      if (gameState.gameStatus === 'playing') {
         Matter.Engine.update(engine, 1000 / 60);
         
         // Update sprites positions
@@ -300,7 +300,7 @@ export default function PixiGame({
   // Handle mouse/touch movement
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (gameState.status === 'playing' && paddleBodyRef.current) {
+      if (gameState.gameStatus === 'playing' && paddleBodyRef.current) {
         const newX = Math.max(
           dimensions.timeColumnWidth + dimensions.paddleWidth / 2,
           Math.min(e.clientX, screenDimensions.width - dimensions.paddleWidth / 2)
@@ -313,7 +313,7 @@ export default function PixiGame({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (gameState.status === 'playing' && e.touches.length > 0 && paddleBodyRef.current) {
+      if (gameState.gameStatus === 'playing' && e.touches.length > 0 && paddleBodyRef.current) {
         e.preventDefault();
         const touch = e.touches[0];
         const newX = Math.max(
@@ -334,7 +334,7 @@ export default function PixiGame({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [gameState.status, dimensions, screenDimensions]);
+  }, [gameState.gameStatus, dimensions, screenDimensions]);
 
   // Create event blocks
   useEffect(() => {
@@ -405,7 +405,7 @@ export default function PixiGame({
         width: '100%',
         height: '100%',
         zIndex: 50,
-        pointerEvents: gameState.status === 'playing' ? 'auto' : 'none',
+        pointerEvents: gameState.gameStatus === 'playing' ? 'auto' : 'none',
       }}
     />
   );

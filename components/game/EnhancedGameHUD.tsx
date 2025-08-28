@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, Variants } from 'framer-motion';
 import { Box, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -55,7 +55,7 @@ export default function EnhancedGameHUD({
     mouseY.set(0);
   };
 
-  const scoreVariants = {
+  const scoreVariants: Variants = {
     initial: { scale: 1 },
     update: { 
       scale: [1, 1.2, 1],
@@ -63,7 +63,7 @@ export default function EnhancedGameHUD({
     }
   };
 
-  const heartVariants = {
+  const heartVariants: Variants = {
     full: { 
       scale: 1, 
       rotate: 0,
@@ -101,7 +101,7 @@ export default function EnhancedGameHUD({
       }}
     >
       <MotionBox
-        animate={{
+        style={{
           rotateX: isHovered ? rotateX : 0,
           rotateY: isHovered ? rotateY : 0,
         }}
@@ -223,7 +223,7 @@ export default function EnhancedGameHUD({
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                {gameState.status === 'idle' && (
+                {gameState.gameStatus === 'idle' && (
                   <motion.button
                     onClick={onStartGame}
                     style={{
@@ -246,7 +246,7 @@ export default function EnhancedGameHUD({
                   </motion.button>
                 )}
                 
-                {gameState.status === 'playing' && (
+                {gameState.gameStatus === 'playing' && (
                   <motion.button
                     onClick={onPauseGame}
                     style={{
@@ -266,7 +266,7 @@ export default function EnhancedGameHUD({
                   </motion.button>
                 )}
                 
-                {gameState.status === 'paused' && (
+                {gameState.gameStatus === 'paused' && (
                   <motion.button
                     onClick={onResumeGame}
                     style={{

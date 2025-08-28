@@ -1,7 +1,7 @@
 'use client';
 
 import { Typography } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -24,7 +24,7 @@ export default function EnhancedGameOverlay({
   onResetGame,
   isMobile,
 }: EnhancedGameOverlayProps) {
-  const overlayVariants = {
+  const overlayVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
@@ -36,7 +36,7 @@ export default function EnhancedGameOverlay({
     }
   };
 
-  const contentVariants = {
+  const contentVariants: Variants = {
     hidden: { scale: 0.8, opacity: 0 },
     visible: { 
       scale: 1, 
@@ -50,7 +50,7 @@ export default function EnhancedGameOverlay({
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: { 
       y: 0, 

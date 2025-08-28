@@ -38,8 +38,8 @@ export default function UltraHUD({
   
   // Expand when game is not playing or when paused
   useEffect(() => {
-    setForceExpanded(gameState.status !== 'playing');
-  }, [gameState.status]);
+    setForceExpanded(gameState.gameStatus !== 'playing');
+  }, [gameState.gameStatus]);
 
   const isExpanded = isHovered || forceExpanded;
 
@@ -300,13 +300,13 @@ export default function UltraHUD({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={gameState.status === 'playing' ? onPauseGame : onResumeGame}
+                  onClick={gameState.gameStatus === 'playing' ? onPauseGame : onResumeGame}
                   style={{
                     width: isMobile ? 40 : 44,
                     height: isMobile ? 40 : 44,
                     borderRadius: '12px',
                     border: 'none',
-                    background: gameState.status === 'playing' 
+                    background: gameState.gameStatus === 'playing' 
                       ? 'linear-gradient(135deg, #FF9500 0%, #FF5E3A 100%)'
                       : 'linear-gradient(135deg, #4CD964 0%, #35C759 100%)',
                     color: 'white',
@@ -317,7 +317,7 @@ export default function UltraHUD({
                     boxShadow: '0 3px 12px rgba(0, 0, 0, 0.15)',
                   }}
                 >
-                  {gameState.status === 'playing' ? 
+                  {gameState.gameStatus === 'playing' ? 
                     <PauseIcon sx={{ fontSize: isMobile ? 20 : 22 }} /> : 
                     <PlayArrowIcon sx={{ fontSize: isMobile ? 20 : 22 }} />
                   }

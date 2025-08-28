@@ -1,4 +1,4 @@
-export type GameStatus = 'idle' | 'playing' | 'paused' | 'gameOver' | 'won';
+export type GameStatus = 'idle' | 'playing' | 'paused' | 'gameOver' | 'victory';
 
 export interface GameState {
   score: number;
