@@ -38,8 +38,14 @@ export default function CalendarHeader({
           justifyContent: 'center',
         }}
       >
-        <Typography sx={{ fontSize: isMobile ? '10px' : '11px', color: '#70757a' }}>
-          GMT+9
+        <Typography sx={{ 
+          fontSize: isMobile ? '10px' : '11px', 
+          color: '#70757a',
+          fontWeight: isMobile ? 500 : 400,
+          letterSpacing: '0.02em',
+          fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
+        }}>
+          {isMobile ? 'GMT' : 'GMT+9'}
         </Typography>
       </Box>
       
@@ -62,10 +68,12 @@ export default function CalendarHeader({
               }}
             >
               <Typography sx={{ 
-                fontSize: isMobile ? '9px' : '11px', 
-                fontWeight: 500, 
+                fontSize: isMobile ? '10px' : '11px', 
+                fontWeight: isMobile ? 600 : 500, 
                 color: isToday ? '#1a73e8' : '#70757a', 
-                mb: 0.25 
+                mb: 0.25,
+                letterSpacing: isMobile ? '0.03em' : 'normal',
+                fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
               }}>
                 {isMobile ? day.slice(0, 1) : day}
               </Typography>
@@ -81,9 +89,11 @@ export default function CalendarHeader({
                 }}
               >
                 <Typography sx={{ 
-                  fontSize: isMobile ? '12px' : '16px', 
-                  fontWeight: isToday ? 500 : 400, 
-                  color: isToday ? '#ffffff' : '#3c4043' 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  fontWeight: isToday ? 600 : 400, 
+                  color: isToday ? '#ffffff' : '#3c4043',
+                  fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
+                  lineHeight: 1,
                 }}>
                   {format(currentDay, 'd')}
                 </Typography>

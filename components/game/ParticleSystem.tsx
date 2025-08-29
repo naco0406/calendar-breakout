@@ -35,12 +35,15 @@ const ParticleComponent: FC<{ particle: Particle }> = ({ particle }) => {
     const animate = () => {
       const elapsed = performance.now() - startTime.current;
       
-      // Update physics
+      // Update physics with smooth easing
       x += vx;
       y += vy;
-      vy += 0.5; // Gravity
-      vx *= 0.99; // Friction
-      life = Math.max(0, 1 - elapsed / 500); // Fade out over 500ms
+      vy += 0.4; // Gravity (slightly reduced for smoother motion)
+      vx *= 0.985; // Friction (less aggressive)
+      
+      // Smooth fade out with easing
+      const fadeProgress = elapsed / 600; // Extended to 600ms
+      life = Math.max(0, 1 - Math.pow(fadeProgress, 2)); // Quadratic easing
 
       if (ref.current && life > 0.01) { // Stop when almost invisible
         ref.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${life})`;
@@ -77,6 +80,8 @@ const ParticleComponent: FC<{ particle: Particle }> = ({ particle }) => {
         willChange: 'transform, opacity',
         transform: `translate3d(${particle.x}px, ${particle.y}px, 0)`,
         zIndex: 500,
+        boxShadow: `0 0 ${particle.size * 0.5}px ${particle.color}`,
+        filter: 'blur(0.5px)',
       }}
     />
   );

@@ -52,11 +52,14 @@ export default function CalendarBody({
             }}
           >
             <Typography sx={{ 
-              fontSize: isMobile ? '9px' : '11px', 
+              fontSize: isMobile ? '10px' : '11px', 
+              fontWeight: isMobile ? 500 : 400,
               color: '#70757a', 
-              transform: 'translateY(-50%)' 
+              transform: 'translateY(-50%)',
+              letterSpacing: isMobile ? '0.02em' : 'normal',
+              fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
             }}>
-              {getHourLabel(hour)}
+              {isMobile && hour % 2 !== 0 ? '' : getHourLabel(hour)}
             </Typography>
           </Box>
         ))}
@@ -85,7 +88,8 @@ export default function CalendarBody({
                   key={hour}
                   sx={{
                     height: `${hourHeight}px`,
-                    borderBottom: index === TIME_SLOTS.length - 1 ? 'none' : '1px solid #dadce0',
+                    borderBottom: index === TIME_SLOTS.length - 1 ? 'none' : 
+                      (isMobile && hour % 2 !== 0 ? '1px solid #e8e8e8' : '1px solid #dadce0'),
                   }}
                 />
               ))}
@@ -127,9 +131,10 @@ export default function CalendarBody({
                         top: `${(adjustedHour * hourHeight) + (currentMinutes * (hourHeight / 60))}px`,
                         left: 0,
                         right: 0,
-                        height: '2px',
+                        height: isMobile ? '1.5px' : '2px',
                         backgroundColor: '#ea4335',
                         zIndex: 3,
+                        boxShadow: '0 1px 3px rgba(234, 67, 53, 0.3)',
                         '&::before': {
                           content: '""',
                           position: 'absolute',

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { FC, useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Box, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { startOfWeek } from 'date-fns';
 
 // Types
@@ -14,6 +14,7 @@ import {
   TIME_SLOTS,
   GAME_CONSTANTS,
   GAME_STATUS,
+  getEventsByPersona,
 } from '@/constants';
 
 // Utils
@@ -92,7 +93,16 @@ export const CalendarBreakoutGame: FC = () => {
   });
 
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [events] = useState<CalendarEvent[]>(SAMPLE_EVENTS);
+  
+  // Get persona from localStorage and load appropriate events
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    if (typeof window !== 'undefined') {
+      const selectedPersona = localStorage.getItem('selectedPersona');
+      const personaEvents = getEventsByPersona(selectedPersona);
+      return personaEvents.length > 0 ? personaEvents : SAMPLE_EVENTS;
+    }
+    return SAMPLE_EVENTS;
+  });
   const [destroyedEvents, setDestroyedEvents] = useState<Set<string>>(new Set());
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [combo, setCombo] = useState(0);
@@ -101,6 +111,7 @@ export const CalendarBreakoutGame: FC = () => {
     const hasSeenTutorial = typeof window !== 'undefined' ? localStorage.getItem('hasSeenTutorial') : null;
     return !hasSeenTutorial;
   });
+  const [showPersonaInfo, setShowPersonaInfo] = useState<string | null>(null);
 
   // Game Objects
   const ballSpeed = getBallSpeed(isMobile);
@@ -129,6 +140,20 @@ export const CalendarBreakoutGame: FC = () => {
       y: screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight,
     }));
   }, [screenDimensions, dimensions]);
+
+  // Show persona info briefly at game start
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const selectedPersona = localStorage.getItem('selectedPersona');
+      if (selectedPersona) {
+        setShowPersonaInfo(selectedPersona);
+        const timer = setTimeout(() => {
+          setShowPersonaInfo(null);
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
 
   // Custom hooks
   const { updatePowerUps, checkPaddlePowerUpCollision } = useGamePhysics({
@@ -568,6 +593,42 @@ export const CalendarBreakoutGame: FC = () => {
         onResetGame={resetGame}
         isMobile={isMobile}
       />
+
+      {/* Persona Info */}
+      {showPersonaInfo && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '20px 40px',
+            borderRadius: '16px',
+            zIndex: 1000,
+            textAlign: 'center',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            animation: 'fadeInOut 3s ease-in-out',
+            '@keyframes fadeInOut': {
+              '0%': { opacity: 0, transform: 'translate(-50%, -50%) scale(0.8)' },
+              '20%': { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+              '80%': { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+              '100%': { opacity: 0, transform: 'translate(-50%, -50%) scale(0.9)' },
+            },
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            {showPersonaInfo === 'developer' && '👨‍💻 Developer Mode'}
+            {showPersonaInfo === 'pm' && '📊 Product Manager Mode'}
+            {showPersonaInfo === 'sales' && '💼 Sales Mode'}
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.8 }}>
+            Break through your {showPersonaInfo} calendar!
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
