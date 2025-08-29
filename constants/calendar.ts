@@ -36,6 +36,7 @@ export const SAMPLE_EVENTS: CalendarEvent[] = [
     startTime: setMinutes(setHours(addDays(weekStart, 1), 9), 0),
     endTime: setMinutes(setHours(addDays(weekStart, 1), 9), 30),
     color: CALENDAR_COLORS.peacock,
+    location: 'Meeting Room A',
     description: 'Daily team sync',
   },
   {
@@ -44,6 +45,7 @@ export const SAMPLE_EVENTS: CalendarEvent[] = [
     startTime: setMinutes(setHours(addDays(weekStart, 1), 11), 0),
     endTime: setMinutes(setHours(addDays(weekStart, 1), 12), 30),
     color: CALENDAR_COLORS.grape,
+    location: 'Conference Room 3F',
     description: 'Q4 product roadmap review',
   },
   {
@@ -52,6 +54,7 @@ export const SAMPLE_EVENTS: CalendarEvent[] = [
     startTime: setMinutes(setHours(addDays(weekStart, 1), 12), 30),
     endTime: setMinutes(setHours(addDays(weekStart, 1), 13), 30),
     color: CALENDAR_COLORS.tangerine,
+    location: 'Blue Bottle Coffee',
     description: 'Catch up at downtown cafe',
   },
   
@@ -62,6 +65,7 @@ export const SAMPLE_EVENTS: CalendarEvent[] = [
     startTime: setMinutes(setHours(addDays(weekStart, 2), 9), 0),
     endTime: setMinutes(setHours(addDays(weekStart, 2), 12), 0),
     color: CALENDAR_COLORS.flamingo,
+    location: 'Design Lab',
     description: 'New feature design workshop',
   },
   {
@@ -70,6 +74,7 @@ export const SAMPLE_EVENTS: CalendarEvent[] = [
     startTime: setMinutes(setHours(addDays(weekStart, 2), 14), 0),
     endTime: setMinutes(setHours(addDays(weekStart, 2), 15), 30),
     color: CALENDAR_COLORS.tomato,
+    location: 'Zoom - Meeting ID: 123-456-789',
     description: 'Project milestone demo',
   },
   {

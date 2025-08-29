@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { FC, useRef, useEffect } from 'react';
 import { Ball as BallType } from '@/types/game';
 
 interface OptimizedBallProps {
@@ -8,7 +8,7 @@ interface OptimizedBallProps {
   isVisible: boolean;
 }
 
-const OptimizedBall = React.memo(({ ball, isVisible }: OptimizedBallProps) => {
+const OptimizedBallComponent: FC<OptimizedBallProps> = ({ ball, isVisible }) => {
   const ballRef = useRef<HTMLDivElement>(null);
   const lastPositionRef = useRef({ x: ball.x, y: ball.y });
 
@@ -50,8 +50,8 @@ const OptimizedBall = React.memo(({ ball, isVisible }: OptimizedBallProps) => {
       }}
     />
   );
-});
+};
 
-OptimizedBall.displayName = 'OptimizedBall';
+export const OptimizedBall = React.memo(OptimizedBallComponent);
 
 export default OptimizedBall;

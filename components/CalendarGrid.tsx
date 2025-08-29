@@ -2,7 +2,7 @@
 
 import { Box, Paper, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { CalendarEvent as CalendarEventType } from '@/types';
-import CalendarEvent from './CalendarEvent';
+import CalendarGridEvent from './CalendarGridEvent';
 import { getEventsForDay } from '@/utils/calendar';
 import { TIME_SLOTS, DAYS_OF_WEEK, getHourLabel } from '@/constants/calendar';
 import { addDays, format, startOfWeek } from 'date-fns';
@@ -241,7 +241,7 @@ const CalendarGrid = ({ events, onEventClick }: CalendarGridProps) => {
                   }}
                 >
                   {dayEvents.map((event) => (
-                    <CalendarEvent
+                    <CalendarGridEvent
                       key={event.id}
                       event={event}
                       onClick={onEventClick}

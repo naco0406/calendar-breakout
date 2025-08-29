@@ -1,50 +1,83 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { FC, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
-import { CalendarEvent } from '@/types/calendar';
-import { SAMPLE_EVENTS, TIME_SLOTS } from '@/constants/calendar';
-import { GameAudio } from '@/utils/audio';
 import { startOfWeek } from 'date-fns';
-import OptimizedPaddle from '@/components/game/OptimizedPaddle';
-import OptimizedBall from '@/components/game/OptimizedBall';
-import UltraHUD from '@/components/game/UltraHUD';
-import EnhancedGameOverlay from '@/components/game/EnhancedGameOverlay';
-import CalendarHeader from '@/components/calendar/CalendarHeader';
-import CalendarBody from '@/components/calendar/CalendarBody';
-import PowerUps, { PowerUp } from '@/components/game/PowerUps';
-// import ComboDisplay from '@/components/game/ComboDisplay';
-import Tutorial from '@/components/game/Tutorial';
-import { useGamePhysics } from '@/hooks/useGamePhysics';
-import { useOptimizedGameLoop } from '@/hooks/useOptimizedGameLoop';
-import { checkCircleRectCollision, applyCollisionResponse } from '@/utils/physics';
+
+// Types
+import { CalendarEvent } from '@/types/calendar';
 import { GameState, Ball, Paddle } from '@/types/game';
 
+// Constants
+import { 
+  SAMPLE_EVENTS, 
+  TIME_SLOTS,
+  GAME_CONSTANTS,
+  GAME_STATUS,
+} from '@/constants';
 
+// Utils
+import { 
+  GameAudio, 
+  checkCircleRectCollision, 
+  applyCollisionResponse,
+  getBallSpeed,
+  getMaxSpeed,
+  getPaddleDimensions,
+  getBallRadius,
+  calculateScore,
+  generatePowerUpId,
+  getRandomPowerUpType,
+  shouldDropPowerUp,
+} from '@/utils';
 
-const CalendarBreakoutGame = () => {
+// Components
+import { 
+  OptimizedPaddle, 
+  OptimizedBall, 
+  PowerUps, 
+  PowerUp, 
+  Tutorial, 
+  UltraHUD, 
+  EnhancedGameOverlay 
+} from '@/components/game';
+import { CalendarHeader, CalendarBody } from '@/components/calendar';
+import ParticleSystem, { createParticles, Particle } from '@/components/game/ParticleSystem';
+import VictoryOverlay from '@/components/game/VictoryOverlay';
+
+// Hooks
+import { 
+  useGamePhysics,
+  useOptimizedGameLoop,
+  usePaddleControls,
+  useGameKeyboard,
+  usePowerUpEffects,
+  useWindowDimensions,
+} from '@/hooks';
+
+export const CalendarBreakoutGame: FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const containerRef = useRef<HTMLDivElement>(null);
   const currentDate = new Date();
   const weekStart = startOfWeek(currentDate);
 
-  // Screen dimensions state should be before dimensions calculation
-  const [screenDimensions, setScreenDimensions] = useState({ width: 800, height: 600 });
+  // Window dimensions
+  const screenDimensions = useWindowDimensions();
   
   // Memoized responsive dimensions
   const dimensions = useMemo(() => {
-    // Calculate hour height based on screen height to fill the screen
-    const availableHeight = screenDimensions.height - (isMobile ? 50 : 60); // Subtract header height
+    const availableHeight = screenDimensions.height - (isMobile ? 50 : 60);
     const hourHeight = Math.floor(availableHeight / TIME_SLOTS.length);
+    const paddleDims = getPaddleDimensions(isMobile);
     
     return {
       timeColumnWidth: isMobile ? 48 : 60,
       headerHeight: isMobile ? 50 : 60,
-      hourHeight: hourHeight,
-      ballRadius: isMobile ? 6 : 8,
-      paddleWidth: isMobile ? 80 : 120,
-      paddleHeight: isMobile ? 10 : 14,
+      hourHeight,
+      ballRadius: getBallRadius(isMobile),
+      paddleWidth: paddleDims.width,
+      paddleHeight: paddleDims.height,
     };
   }, [isMobile, screenDimensions.height]);
 
@@ -52,9 +85,9 @@ const CalendarBreakoutGame = () => {
 
   // Game State
   const [gameState, setGameState] = useState<GameState>({
-    gameStatus: 'idle',
+    gameStatus: GAME_STATUS.IDLE,
     score: 0,
-    lives: 3,
+    lives: GAME_CONSTANTS.INITIAL_LIVES,
     level: 1,
   });
 
@@ -63,98 +96,72 @@ const CalendarBreakoutGame = () => {
   const [destroyedEvents, setDestroyedEvents] = useState<Set<string>>(new Set());
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [combo, setCombo] = useState(0);
-  // const [maxCombo, setMaxCombo] = useState(0);
+  const [particles, setParticles] = useState<Particle[]>([]);
   const [showTutorial, setShowTutorial] = useState(() => {
     const hasSeenTutorial = typeof window !== 'undefined' ? localStorage.getItem('hasSeenTutorial') : null;
     return !hasSeenTutorial;
   });
 
-  // Game Objects with proper initial positioning
+  // Game Objects
+  const ballSpeed = getBallSpeed(isMobile);
   const [ball, setBall] = useState<Ball>({
     x: 400,
-    y: 450,  // Start lower on the screen
-    dx: isMobile ? 4 : 5.5,
-    dy: isMobile ? -4 : -5.5,
+    y: 450,
+    dx: ballSpeed,
+    dy: -ballSpeed,
     radius: dimensions.ballRadius,
-    speed: isMobile ? 4 : 5.5,
+    speed: ballSpeed,
   });
 
   const [paddle, setPaddle] = useState<Paddle>({
     x: 300,
-    y: screenDimensions.height - 80 - dimensions.paddleHeight,
+    y: screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight,
     width: dimensions.paddleWidth,
     height: dimensions.paddleHeight,
-    speed: 8,
+    speed: GAME_CONSTANTS.PADDLE.SPEED,
   });
 
-  // Screen dimensions with debounced updates
+  // Update paddle position when screen resizes
   useEffect(() => {
-    const updateDimensions = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      setScreenDimensions({ width, height });
-      
-      // Reset paddle position to center when screen resizes
-      setPaddle(prev => ({
-        ...prev,
-        x: Math.max(dimensions.timeColumnWidth, Math.min(width / 2 - prev.width / 2, width - prev.width - dimensions.timeColumnWidth)),
-        y: prev.y,
-        speed: prev.speed
-      }));
-    };
+    setPaddle(prev => ({
+      ...prev,
+      x: Math.max(dimensions.timeColumnWidth, Math.min(screenDimensions.width / 2 - prev.width / 2, screenDimensions.width - prev.width)),
+      y: screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight,
+    }));
+  }, [screenDimensions, dimensions]);
 
-    updateDimensions();
-    
-    let timeoutId: NodeJS.Timeout;
-    const debouncedUpdate = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(updateDimensions, 100);
-    };
-
-    window.addEventListener('resize', debouncedUpdate);
-    window.addEventListener('orientationchange', debouncedUpdate);
-    
-    return () => {
-      window.removeEventListener('resize', debouncedUpdate);
-      window.removeEventListener('orientationchange', debouncedUpdate);
-      clearTimeout(timeoutId);
-    };
-  }, [dimensions.timeColumnWidth, dimensions.paddleWidth]);
-
-  // Game physics hook
+  // Custom hooks
   const { updatePowerUps, checkPaddlePowerUpCollision } = useGamePhysics({
     screenDimensions,
     isMobile,
   });
-  
-  // Handle power-up collection
-  const handlePowerUpCollection = useCallback((powerUp: PowerUp) => {
-    switch (powerUp.type) {
-      case 'extra-life':
-        setGameState(prev => ({ ...prev, lives: Math.min(prev.lives + 1, 5) }));
-        break;
-      case 'widen-paddle':
-        setPaddle(prev => ({ ...prev, width: prev.width * 1.5 }));
-        setTimeout(() => {
-          setPaddle(prev => ({ ...prev, width: dimensions.paddleWidth }));
-        }, 10000);
-        break;
-      case 'slow-ball':
-        setBall(prev => ({ ...prev, dx: prev.dx * 0.5, dy: prev.dy * 0.5 }));
-        setTimeout(() => {
-          setBall(prev => ({ ...prev, dx: prev.dx * 2, dy: prev.dy * 2 }));
-        }, 8000);
-        break;
-    }
-    
-    if (soundEnabled) GameAudio.playHitSound();
-  }, [soundEnabled, dimensions.paddleWidth]);
 
-  // Memoized active events to prevent unnecessary recalculations
+  const { handlePowerUpCollection } = usePowerUpEffects({
+    soundEnabled,
+    initialPaddleWidth: dimensions.paddleWidth,
+  });
+
+  usePaddleControls({
+    gameStatus: gameState.gameStatus,
+    paddle,
+    screenDimensions,
+    timeColumnWidth: dimensions.timeColumnWidth,
+    setPaddle,
+  });
+
+  // Memoized active events
   const activeEvents = useMemo(() => 
     events.filter(event => !destroyedEvents.has(event.id)), 
     [events, destroyedEvents]
   );
+
+  // Check for victory condition
+  useEffect(() => {
+    if (gameState.gameStatus === GAME_STATUS.PLAYING && activeEvents.length === 0 && events.length > 0) {
+      setGameState(prev => ({ ...prev, gameStatus: GAME_STATUS.VICTORY }));
+      if (soundEnabled) GameAudio.playGameOverSound(); // TODO: Add victory sound
+    }
+  }, [activeEvents.length, events.length, gameState.gameStatus, soundEnabled]);
 
   // Cache DOM elements for collision detection
   const eventElementsRef = useRef<Map<string, HTMLElement>>(new Map());
@@ -172,7 +179,7 @@ const CalendarBreakoutGame = () => {
     eventElementsRef.current = newMap;
   }, [activeEvents]);
 
-  // Optimized collision detection with improved physics
+  // Optimized collision detection
   const checkEventCollisions = useCallback(() => {
     if (!containerRef.current) return null;
 
@@ -189,7 +196,6 @@ const CalendarBreakoutGame = () => {
           height: rect.height,
         };
 
-        // Use improved physics collision detection
         const collision = checkCircleRectCollision(
           { x: ball.x, y: ball.y, radius: ball.radius },
           relativeRect
@@ -201,11 +207,11 @@ const CalendarBreakoutGame = () => {
       }
     }
     return null;
-  }, [activeEvents, ball.x, ball.y, ball.radius]);
+  }, [activeEvents, ball]);
 
-  // Optimized game loop
+  // Game loop
   const gameLoop = useCallback((deltaTime: number) => {
-    if (gameState.gameStatus !== 'playing') return;
+    if (gameState.gameStatus !== GAME_STATUS.PLAYING) return;
 
     setBall(prevBall => {
       let newX = prevBall.x + prevBall.dx;
@@ -224,7 +230,7 @@ const CalendarBreakoutGame = () => {
         if (soundEnabled) GameAudio.playHitSound();
       }
 
-      // Top boundary (respect calendar header)
+      // Top boundary
       const topBoundary = dimensions.headerHeight;
       if (newY - prevBall.radius <= topBoundary) {
         newY = topBoundary + prevBall.radius;
@@ -232,23 +238,21 @@ const CalendarBreakoutGame = () => {
         if (soundEnabled) GameAudio.playHitSound();
       }
 
-      // Simple paddle collision detection
-      const paddleY = screenDimensions.height - 80 - dimensions.paddleHeight;
+      // Paddle collision
+      const paddleY = screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight;
       if (newY + prevBall.radius >= paddleY &&
           newY + prevBall.radius <= paddleY + dimensions.paddleHeight + 10 &&
           newX >= paddle.x - 10 &&
-          newX <= paddle.x + dimensions.paddleWidth + 10) {
+          newX <= paddle.x + paddle.width + 10) {
         
-        // Calculate hit position and apply spin
-        const paddleCenter = paddle.x + dimensions.paddleWidth / 2;
-        const hitPosition = (newX - paddleCenter) / (dimensions.paddleWidth / 2);
+        const paddleCenter = paddle.x + paddle.width / 2;
+        const hitPosition = (newX - paddleCenter) / (paddle.width / 2);
         
         newY = paddleY - prevBall.radius;
         newDy = -Math.abs(newDy);
         newDx = newDx + hitPosition * 2;
         
-        // Speed limit
-        const maxSpeed = isMobile ? 8 : 10;
+        const maxSpeed = getMaxSpeed(isMobile);
         newDx = Math.max(-maxSpeed, Math.min(maxSpeed, newDx));
         
         if (soundEnabled) GameAudio.playHitSound();
@@ -256,88 +260,88 @@ const CalendarBreakoutGame = () => {
 
       // Bottom boundary
       if (newY > screenDimensions.height + 50) {
-        setCombo(0); // Reset combo on miss
+        setCombo(0);
         setGameState(prev => {
           const newLives = prev.lives - 1;
           if (newLives <= 0) {
             if (soundEnabled) GameAudio.playGameOverSound();
-            return { ...prev, gameStatus: 'gameOver', lives: 0 };
+            return { ...prev, gameStatus: GAME_STATUS.GAME_OVER, lives: 0 };
           }
           return { ...prev, lives: newLives };
         });
         
         // Reset ball
+        const centerX = screenDimensions.width / 2;
+        const startY = screenDimensions.height - 200;
+        const speed = getBallSpeed(isMobile);
         return {
-          x: screenDimensions.width / 2,
-          y: screenDimensions.height - 200,  // Start near bottom
-          dx: isMobile ? 4 : 5.5,
-          dy: isMobile ? -4 : -5.5,
+          x: centerX,
+          y: startY,
+          dx: speed,
+          dy: -speed,
           radius: prevBall.radius,
           speed: prevBall.speed,
         };
       }
 
       // Speed limit
-      const maxSpeed = isMobile ? 8 : 10;
+      const maxSpeed = getMaxSpeed(isMobile);
       newDx = Math.max(-maxSpeed, Math.min(maxSpeed, newDx));
       newDy = Math.max(-maxSpeed, Math.min(maxSpeed, newDy));
 
-      return { ...prevBall, x: newX, y: newY, dx: newDx, dy: newDy, speed: prevBall.speed };
+      return { ...prevBall, x: newX, y: newY, dx: newDx, dy: newDy };
     });
 
     // Update power-ups
     setPowerUps(prev => {
       const updated = updatePowerUps(prev, deltaTime);
       
-      // Check collisions with paddle
       return updated.filter(powerUp => {
-        const paddleY = screenDimensions.height - 80 - dimensions.paddleHeight;
+        const paddleY = screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight;
         if (checkPaddlePowerUpCollision(paddle, powerUp, paddleY)) {
-          // Trigger collection
-          handlePowerUpCollection(powerUp);
+          handlePowerUpCollection(powerUp, setGameState, setPaddle, setBall);
           return false;
         }
         return true;
       });
     });
-  }, [gameState.gameStatus, soundEnabled, dimensions, screenDimensions, isMobile, paddle, updatePowerUps, checkPaddlePowerUpCollision, handlePowerUpCollection]);
+  }, [
+    gameState.gameStatus, 
+    soundEnabled, 
+    dimensions, 
+    screenDimensions, 
+    isMobile, 
+    paddle, 
+    updatePowerUps, 
+    checkPaddlePowerUpCollision, 
+    handlePowerUpCollection
+  ]);
 
   // Use optimized game loop
   useOptimizedGameLoop({
     callback: gameLoop,
-    isRunning: gameState.gameStatus === 'playing',
-    targetFPS: 60
+    isRunning: gameState.gameStatus === GAME_STATUS.PLAYING,
+    targetFPS: GAME_CONSTANTS.TARGET_FPS,
   });
 
-  // Check event collisions after ball position updates
+  // Check event collisions
   useEffect(() => {
-    if (gameState.gameStatus !== 'playing') return;
+    if (gameState.gameStatus !== GAME_STATUS.PLAYING) return;
 
     const collisionResult = checkEventCollisions();
     if (collisionResult) {
       const { event: hitEvent, collision } = collisionResult;
       
-      // Destroy event
       setDestroyedEvents(prev => new Set([...prev, hitEvent.id]));
+      setCombo(prev => prev + 1);
       
-      // Update combo
-      setCombo(prev => {
-        const newCombo = prev + 1;
-        // setMaxCombo(max => Math.max(max, newCombo));
-        return newCombo;
-      });
-      
-      // Update score
-      const baseScore = 100;
-      const comboMultiplier = Math.max(1, combo * 0.5);
-      const finalScore = Math.floor(baseScore * comboMultiplier);
+      const finalScore = calculateScore(GAME_CONSTANTS.BASE_SCORE, combo);
       setGameState(prev => ({ ...prev, score: prev.score + finalScore }));
       
-      // Spawn power-up chance
-      if (Math.random() < 0.2) {
+      if (shouldDropPowerUp()) {
         const newPowerUp: PowerUp = {
-          id: `powerup-${Date.now()}`,
-          type: (['multiball', 'widen-paddle', 'slow-ball', 'extra-life'] as const)[Math.floor(Math.random() * 4)],
+          id: generatePowerUpId(),
+          type: getRandomPowerUpType() as PowerUp['type'],
           x: ball.x,
           y: ball.y,
           active: true,
@@ -347,153 +351,110 @@ const CalendarBreakoutGame = () => {
       
       if (soundEnabled) GameAudio.playHitSound();
       
-      // Apply collision response
       setBall(prev => {
         const response = applyCollisionResponse(prev, collision);
-        return {
-          ...prev,
-          x: response.x,
-          y: response.y,
-          dx: response.dx,
-          dy: response.dy,
-          speed: prev.speed
-        };
+        return { ...prev, ...response };
       });
 
-      // Animate event destruction
+      // Create particle effect and animate event destruction
       const eventElement = containerRef.current?.querySelector(`[data-event-id="${hitEvent.id}"]`) as HTMLElement;
       if (eventElement) {
+        const rect = eventElement.getBoundingClientRect();
+        const containerRect = containerRef.current!.getBoundingClientRect();
+        const relativeX = rect.left - containerRect.left;
+        const relativeY = rect.top - containerRect.top;
+        
+        // Create particles at the event location
+        const newParticles = createParticles(
+          relativeX,
+          relativeY,
+          rect.width,
+          rect.height,
+          hitEvent.color
+        );
+        setParticles(prev => [...prev, ...newParticles]);
+        
+        // Animate event destruction
         eventElement.style.transform = 'scale(0)';
         eventElement.style.opacity = '0';
         eventElement.style.transition = 'all 0.2s ease-out';
-        setTimeout(() => eventElement.style.display = 'none', 200);
+        setTimeout(() => eventElement.style.display = 'none', GAME_CONSTANTS.EVENT_DESTROY_ANIMATION_DURATION);
       }
     }
-  }, [ball.x, ball.y, gameState.gameStatus, checkEventCollisions, combo, soundEnabled]);
-
-  // Optimized mouse/touch controls
-  useEffect(() => {
-    let isMoving = false;
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      if (gameState.gameStatus === 'playing' && !isMoving) {
-        isMoving = true;
-        requestAnimationFrame(() => {
-          const newX = Math.max(
-            dimensions.timeColumnWidth, 
-            Math.min(e.clientX - paddle.width / 2, screenDimensions.width - paddle.width - dimensions.timeColumnWidth)
-          );
-          setPaddle(prev => ({ ...prev, x: newX, y: prev.y, speed: prev.speed }));
-          isMoving = false;
-        });
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (gameState.gameStatus === 'playing' && e.touches.length > 0 && !isMoving) {
-        e.preventDefault();
-        isMoving = true;
-        const touch = e.touches[0];
-        requestAnimationFrame(() => {
-          const newX = Math.max(
-            dimensions.timeColumnWidth, 
-            Math.min(touch.clientX - paddle.width / 2, screenDimensions.width - paddle.width - dimensions.timeColumnWidth)
-          );
-          setPaddle(prev => ({ ...prev, x: newX, y: prev.y, speed: prev.speed }));
-          isMoving = false;
-        });
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [gameState.gameStatus, dimensions, paddle.width, screenDimensions]);
+  }, [ball, gameState.gameStatus, checkEventCollisions, combo, soundEnabled]);
 
   // Game controls
   const startGame = useCallback(() => {
-    if (showTutorial) {
-      return;
-    }
+    if (showTutorial) return;
     
     const centerX = screenDimensions.width / 2;
-    const startY = screenDimensions.height - 200;  // Start near bottom
+    const startY = screenDimensions.height - 200;
+    const speed = getBallSpeed(isMobile);
     
-            setGameState(prev => ({ ...prev, gameStatus: 'playing' }));
+    setGameState(prev => ({ ...prev, gameStatus: GAME_STATUS.PLAYING }));
     setBall({
       x: centerX,
       y: startY,
-      dx: isMobile ? 4 : 5.5,
-      dy: isMobile ? -4 : -5.5,
+      dx: speed,
+      dy: -speed,
       radius: dimensions.ballRadius,
-      speed: isMobile ? 4 : 5.5,
+      speed,
     });
     setPaddle({
       x: centerX - dimensions.paddleWidth / 2,
-      y: screenDimensions.height - 80 - dimensions.paddleHeight,
+      y: screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight,
       width: dimensions.paddleWidth,
       height: dimensions.paddleHeight,
-      speed: 8,
+      speed: GAME_CONSTANTS.PADDLE.SPEED,
     });
     setCombo(0);
     setPowerUps([]);
+    setParticles([]);
   }, [screenDimensions, isMobile, dimensions, showTutorial]);
 
-  const pauseGame = useCallback(() => setGameState(prev => ({ ...prev, gameStatus: 'paused' })), []);
-  const resumeGame = useCallback(() => setGameState(prev => ({ ...prev, gameStatus: 'playing' })), []);
+  const pauseGame = useCallback(() => setGameState(prev => ({ ...prev, gameStatus: GAME_STATUS.PAUSED })), []);
+  const resumeGame = useCallback(() => setGameState(prev => ({ ...prev, gameStatus: GAME_STATUS.PLAYING })), []);
   
   const resetGame = useCallback(() => {
-    setGameState({ gameStatus: 'idle', score: 0, lives: 3, level: 1 });
-    setDestroyedEvents(new Set());
     const centerX = screenDimensions.width / 2;
-    const startY = screenDimensions.height - 200;  // Start near bottom
+    const startY = screenDimensions.height - 200;
+    const speed = getBallSpeed(isMobile);
+    
+    setGameState({ 
+      gameStatus: GAME_STATUS.IDLE, 
+      score: 0, 
+      lives: GAME_CONSTANTS.INITIAL_LIVES, 
+      level: 1 
+    });
+    setDestroyedEvents(new Set());
     setBall({
       x: centerX,
       y: startY,
-      dx: isMobile ? 4 : 5.5,
-      dy: isMobile ? -4 : -5.5,
+      dx: speed,
+      dy: -speed,
       radius: dimensions.ballRadius,
-      speed: isMobile ? 4 : 5.5,
+      speed,
     });
     setPaddle({
       x: centerX - dimensions.paddleWidth / 2,
-      y: screenDimensions.height - 80 - dimensions.paddleHeight,
+      y: screenDimensions.height - GAME_CONSTANTS.PADDLE_BOTTOM_OFFSET - dimensions.paddleHeight,
       width: dimensions.paddleWidth,
       height: dimensions.paddleHeight,
-      speed: 8,
+      speed: GAME_CONSTANTS.PADDLE.SPEED,
     });
     setCombo(0);
-    // setMaxCombo(0);
     setPowerUps([]);
+    setParticles([]);
   }, [screenDimensions, isMobile, dimensions]);
 
   // Keyboard controls
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-                if (gameState.gameStatus === 'playing') pauseGame();
-      else if (gameState.gameStatus === 'paused') resumeGame();
-      else if (gameState.gameStatus === 'idle') startGame();
-          break;
-        case 'KeyR':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            resetGame();
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState.gameStatus, pauseGame, resumeGame, startGame, resetGame]);
-
+  useGameKeyboard({
+    gameStatus: gameState.gameStatus,
+    startGame,
+    pauseGame,
+    resumeGame,
+    resetGame,
+  });
 
   return (
     <Box
@@ -507,8 +468,7 @@ const CalendarBreakoutGame = () => {
         fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
         touchAction: 'none',
         userSelect: 'none',
-        // Performance optimizations
-        willChange: gameState.gameStatus === 'playing' ? 'transform' : 'auto',
+        willChange: gameState.gameStatus === GAME_STATUS.PLAYING ? 'transform' : 'auto',
         contain: 'layout style paint',
       }}
     >
@@ -534,7 +494,6 @@ const CalendarBreakoutGame = () => {
         backgroundColor: '#ffffff',
         zIndex: 1,
       }}>
-        {/* Calendar Header */}
         <CalendarHeader
           weekStart={weekStart}
           currentDate={currentDate}
@@ -542,7 +501,6 @@ const CalendarBreakoutGame = () => {
           headerHeight={dimensions.headerHeight}
         />
 
-        {/* Calendar Body */}
         <CalendarBody
           weekStart={weekStart}
           currentDate={currentDate}
@@ -555,31 +513,32 @@ const CalendarBreakoutGame = () => {
         />
       </Box>
 
-
-
-      {/* Game Ball */}
+      {/* Game Elements */}
       <OptimizedBall
         ball={ball}
-        isVisible={gameState.gameStatus === 'playing' || gameState.gameStatus === 'paused'}
+        isVisible={gameState.gameStatus === GAME_STATUS.PLAYING || gameState.gameStatus === GAME_STATUS.PAUSED}
       />
 
-      {/* Game Paddle */}
       <OptimizedPaddle
         paddle={paddle}
         gameStatus={gameState.gameStatus}
       />
 
-      {/* Power-ups */}
       <PowerUps
         powerUps={powerUps}
         onCollect={(powerUp) => {
           setPowerUps(prev => prev.filter(p => p.id !== powerUp.id));
-          handlePowerUpCollection(powerUp);
+          handlePowerUpCollection(powerUp, setGameState, setPaddle, setBall);
         }}
       />
 
-      {/* Combo Display */}
-      {/* <ComboDisplay combo={combo} maxCombo={maxCombo} /> */}
+      {/* Particle System */}
+      <ParticleSystem
+        particles={particles}
+        onComplete={(id) => {
+          setParticles(prev => prev.filter(p => p.id !== id));
+        }}
+      />
 
       {/* Tutorial */}
       {showTutorial && (
@@ -592,9 +551,18 @@ const CalendarBreakoutGame = () => {
         />
       )}
 
+      {/* Victory Overlay */}
+      <VictoryOverlay
+        isVisible={gameState.gameStatus === GAME_STATUS.VICTORY}
+        score={gameState.score + (gameState.lives * 500)} // Bonus for remaining lives
+        lives={gameState.lives}
+        onPlayAgain={resetGame}
+        isMobile={isMobile}
+      />
+
       {/* Game Status Overlays */}
       <EnhancedGameOverlay
-        status={gameState.gameStatus}
+        status={gameState.gameStatus === GAME_STATUS.VICTORY ? GAME_STATUS.IDLE : gameState.gameStatus}
         score={gameState.score}
         onStartGame={startGame}
         onResetGame={resetGame}
@@ -604,4 +572,4 @@ const CalendarBreakoutGame = () => {
   );
 };
 
-export default CalendarBreakoutGame; 
+export default CalendarBreakoutGame;

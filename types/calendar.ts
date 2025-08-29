@@ -4,5 +4,6 @@ export interface CalendarEvent {
   startTime: Date;
   endTime: Date;
   color: string;
+  location?: string;
   description?: string;
 }

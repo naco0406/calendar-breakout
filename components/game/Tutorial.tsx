@@ -1,18 +1,31 @@
 'use client';
 
+import React, { FC, useState } from 'react';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import CloseIcon from '@mui/icons-material/Close';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import { useState } from 'react';
 
 interface TutorialProps {
   onClose: () => void;
   isMobile: boolean;
 }
 
-const TUTORIAL_STEPS = [
+interface PowerUpInfo {
+  icon: string;
+  name: string;
+  effect: string;
+}
+
+interface TutorialStep {
+  title: string;
+  content: string;
+  highlight: string | null;
+  powerups?: PowerUpInfo[];
+}
+
+const TUTORIAL_STEPS: TutorialStep[] = [
   {
     title: 'Welcome to Calendar Breakout!',
     content: 'Break through your calendar events in this unique game that combines scheduling with classic breakout gameplay.',
@@ -32,6 +45,12 @@ const TUTORIAL_STEPS = [
     title: 'Collect Power-ups',
     content: 'Sometimes power-ups will drop when you break events. Collect them for special abilities!',
     highlight: 'powerups',
+    powerups: [
+      { icon: '⚡', name: 'Multi Ball', effect: 'Split ball into multiple balls (coming soon!)' },
+      { icon: '🔷', name: 'Wide Paddle', effect: 'Makes your paddle 50% wider for 10 seconds' },
+      { icon: '🐌', name: 'Slow Ball', effect: 'Slows down ball speed by 50% for 8 seconds' },
+      { icon: '❤️', name: 'Extra Life', effect: 'Adds one extra life (max 5)' },
+    ],
   },
   {
     title: 'Build Combos',
@@ -40,7 +59,7 @@ const TUTORIAL_STEPS = [
   },
 ];
 
-export default function Tutorial({ onClose, isMobile }: TutorialProps) {
+export const Tutorial: FC<TutorialProps> = ({ onClose, isMobile }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNext = () => {
@@ -107,6 +126,50 @@ export default function Tutorial({ onClose, isMobile }: TutorialProps) {
           {step.content}
         </Typography>
 
+        {step.powerups && (
+          <Box sx={{ mb: 4 }}>
+            {step.powerups.map((powerup, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mb: 2,
+                  p: 1.5,
+                  borderRadius: 2,
+                  backgroundColor: 'background.default',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    backgroundColor: 'primary.light',
+                  }}
+                >
+                  {powerup.icon}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    {powerup.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {powerup.effect}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
           <Button
             onClick={handlePrev}
@@ -143,4 +206,6 @@ export default function Tutorial({ onClose, isMobile }: TutorialProps) {
       </Box>
     </motion.div>
   );
-}
+};
+
+export default Tutorial;

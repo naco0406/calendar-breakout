@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { FC } from 'react';
 import { Box } from '@mui/material';
+import { POWERUP_CONFIG } from '@/constants/game';
 
 export interface PowerUp {
   id: string;
@@ -16,31 +17,13 @@ interface PowerUpsProps {
   onCollect: (powerUp: PowerUp) => void;
 }
 
-const POWER_UP_CONFIG = {
-  multiball: {
-    icon: '⚡',
-    color: '#FFD700',
-    name: 'Multi Ball',
-  },
-  'widen-paddle': {
-    icon: '🔷',
-    color: '#00BCD4',
-    name: 'Wide Paddle',
-  },
-  'slow-ball': {
-    icon: '🐌',
-    color: '#4CAF50',
-    name: 'Slow Ball',
-  },
-  'extra-life': {
-    icon: '❤️',
-    color: '#F44336',
-    name: 'Extra Life',
-  },
-};
+interface PowerUpItemProps {
+  powerUp: PowerUp;
+  onCollect: (powerUp: PowerUp) => void;
+}
 
-const PowerUpItem = React.memo(({ powerUp, onCollect }: { powerUp: PowerUp; onCollect: (powerUp: PowerUp) => void }) => {
-  const config = POWER_UP_CONFIG[powerUp.type];
+const PowerUpItemComponent: FC<PowerUpItemProps> = ({ powerUp, onCollect }) => {
+  const config = POWERUP_CONFIG[powerUp.type];
   
   return (
     <Box
@@ -69,15 +52,15 @@ const PowerUpItem = React.memo(({ powerUp, onCollect }: { powerUp: PowerUp; onCo
       {config.icon}
     </Box>
   );
-}, (prevProps, nextProps) => {
+};
+
+export const PowerUpItem = React.memo(PowerUpItemComponent, (prevProps, nextProps) => {
   return prevProps.powerUp.x === nextProps.powerUp.x &&
          prevProps.powerUp.y === nextProps.powerUp.y &&
          prevProps.powerUp.id === nextProps.powerUp.id;
 });
 
-PowerUpItem.displayName = 'PowerUpItem';
-
-const PowerUps = React.memo(({ powerUps, onCollect }: PowerUpsProps) => {
+const PowerUpsComponent: FC<PowerUpsProps> = ({ powerUps, onCollect }) => {
   return (
     <>
       {powerUps.map((powerUp) => (
@@ -89,8 +72,8 @@ const PowerUps = React.memo(({ powerUps, onCollect }: PowerUpsProps) => {
       ))}
     </>
   );
-});
+};
 
-PowerUps.displayName = 'PowerUps';
+export const PowerUps = React.memo(PowerUpsComponent);
 
 export default PowerUps;

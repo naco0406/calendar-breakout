@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { FC, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Paddle as PaddleType } from '@/types/game';
+import { GameStatus } from '@/constants/game';
 
 interface OptimizedPaddleProps {
   paddle: PaddleType;
-  gameStatus: 'idle' | 'playing' | 'paused' | 'gameOver' | 'victory';
+  gameStatus: GameStatus;
 }
 
-const OptimizedPaddle = React.memo(({ paddle, gameStatus }: OptimizedPaddleProps) => {
+const OptimizedPaddleComponent: FC<OptimizedPaddleProps> = ({ paddle, gameStatus }) => {
   const paddleRef = useRef<HTMLDivElement>(null);
   const lastXRef = useRef(paddle.x);
 
@@ -76,8 +77,8 @@ const OptimizedPaddle = React.memo(({ paddle, gameStatus }: OptimizedPaddleProps
       )}
     </>
   );
-});
+};
 
-OptimizedPaddle.displayName = 'OptimizedPaddle';
+export const OptimizedPaddle = React.memo(OptimizedPaddleComponent);
 
 export default OptimizedPaddle;
