@@ -6,6 +6,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
+import { useIntl } from '@/hooks';
 
 interface EnhancedGameOverlayProps {
   status: 'idle' | 'playing' | 'paused' | 'gameOver' | 'victory';
@@ -24,6 +25,7 @@ export default function EnhancedGameOverlay({
   onResetGame,
   isMobile,
 }: EnhancedGameOverlayProps) {
+  const intl = useIntl();
   const overlayVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -107,7 +109,7 @@ export default function EnhancedGameOverlay({
                   letterSpacing: '-0.02em',
                 }}
               >
-                Calendar Breakout
+                {intl.t('home.title')}
               </MotionTypography>
             </motion.div>
 
@@ -119,7 +121,7 @@ export default function EnhancedGameOverlay({
                 maxWidth: 400,
                 mx: 'auto',
               }}>
-                Break through your schedule and clear the calendar!
+                {intl.t('game.clickToStart')}
               </Typography>
             </motion.div>
 
@@ -148,7 +150,7 @@ export default function EnhancedGameOverlay({
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <PlayArrowIcon /> Start Game
+                <PlayArrowIcon /> {intl.t('home.startButton')}
               </motion.button>
             </motion.div>
 
@@ -157,7 +159,7 @@ export default function EnhancedGameOverlay({
               style={{ marginTop: 24 }}
             >
               <Typography variant="body2" sx={{ color: '#999' }}>
-                {isMobile ? 'Touch and drag to move' : 'Use mouse to control • Press SPACE to pause'}
+                {isMobile ? intl.t('game.touchToMove') : intl.t('game.mouseToControl')}
               </Typography>
             </motion.div>
           </motion.div>
@@ -199,7 +201,7 @@ export default function EnhancedGameOverlay({
                 textShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
               }}
             >
-              Paused
+              {intl.t('game.paused')}
             </MotionTypography>
           </motion.div>
         </motion.div>
@@ -245,7 +247,7 @@ export default function EnhancedGameOverlay({
                   textShadow: '0 4px 16px rgba(255, 71, 87, 0.3)',
                 }}
               >
-                Game Over
+                {intl.t('game.gameOver')}
               </MotionTypography>
             </motion.div>
 
@@ -255,7 +257,7 @@ export default function EnhancedGameOverlay({
                 color: 'white',
                 opacity: 0.9,
               }}>
-                Final Score: {score.toLocaleString()}
+                {intl.t('game.finalScore')}: {score.toLocaleString()}
               </Typography>
             </motion.div>
 
@@ -284,7 +286,7 @@ export default function EnhancedGameOverlay({
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <RestartAltIcon /> Try Again
+                <RestartAltIcon /> {intl.t('game.tryAgain')}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -385,7 +387,7 @@ export default function EnhancedGameOverlay({
                   textShadow: '0 4px 16px rgba(255, 215, 0, 0.3)',
                 }}
               >
-                Victory!
+                {intl.t('game.victory')}
               </MotionTypography>
             </motion.div>
 
@@ -395,7 +397,7 @@ export default function EnhancedGameOverlay({
                 color: 'white',
                 opacity: 0.9,
               }}>
-                Score: {score.toLocaleString()}
+                {intl.t('game.score')}: {score.toLocaleString()}
               </Typography>
             </motion.div>
 
@@ -447,7 +449,7 @@ export default function EnhancedGameOverlay({
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <RestartAltIcon /> Play Again
+                <RestartAltIcon /> {intl.t('game.playAgain')}
               </motion.button>
             </motion.div>
           </motion.div>

@@ -5,3 +5,4 @@ export { usePaddleControls } from './usePaddleControls';
 export { useGameKeyboard } from './useGameKeyboard';
 export { usePowerUpEffects } from './usePowerUpEffects';
 export { useWindowDimensions } from './useWindowDimensions';
+export { useIntl } from './useIntl';

@@ -1,103 +1,120 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Button, Container, Chip, IconButton, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Button, Container, IconButton, useTheme, useMediaQuery } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useRouter } from 'next/navigation';
+import { useIntl } from '@/hooks';
 
 const MotionBox = motion(Box);
 const MotionTypography = motion(Typography);
 
-// Mini game preview component
-const GamePreview = () => {
-  const [ballPos, setBallPos] = useState({ x: 200, y: 150 });
-  const [ballVel, setBallVel] = useState({ dx: 2, dy: -2 });
+// Optimized game preview component
+const GamePreview = React.memo(() => {
   const [paddleX, setPaddleX] = useState(200);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [isTouching, setIsTouching] = useState(false);
+  const animationRef = useRef<number | undefined>(undefined);
+  const ballRef = useRef({ x: 200, y: 150, dx: 2, dy: -2 });
+  const ballElementRef = useRef<HTMLDivElement>(null);
+  const paddleElementRef = useRef<HTMLDivElement>(null);
 
+  // Use RAF for smooth 60fps animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBallPos(prev => {
-        let { x, y } = prev;
-        let { dx, dy } = ballVel;
+    const animate = () => {
+      const ball = ballRef.current;
+      
+      // Update position
+      ball.x += ball.dx;
+      ball.y += ball.dy;
 
-        // Update position with smooth physics
-        x += dx;
-        y += dy;
+      // Bounce off walls
+      if (ball.x <= 10 || ball.x >= 390) {
+        ball.dx = -ball.dx * 0.95;
+        ball.x = ball.x <= 10 ? 10 : 390;
+      }
+      if (ball.y <= 10) {
+        ball.dy = Math.abs(ball.dy) * 0.95;
+        ball.y = 10;
+      }
+      
+      // Reset if ball goes off bottom
+      if (ball.y >= 290) {
+        ball.x = 200;
+        ball.y = 200;
+        ball.dx = (Math.random() - 0.5) * 4;
+        ball.dy = -2;
+      }
 
-        // Bounce off walls with energy loss
-        if (x <= 10 || x >= 390) {
-          dx = -dx * 0.95;
-          x = x <= 10 ? 10 : 390;
-        }
-        if (y <= 10) {
-          dy = Math.abs(dy) * 0.95;
-          y = 10;
-        }
-        
-        // Reset if ball goes off bottom with random direction
-        if (y >= 290) {
-          x = 200;
-          y = 200;
-          dx = (Math.random() - 0.5) * 4;
-          dy = -Math.abs(dy);
-        }
+      // Paddle bounce
+      if (ball.y >= 235 && ball.y <= 265 && Math.abs(ball.x - paddleX) < 60) {
+        ball.dy = -Math.abs(ball.dy) * 1.05;
+        const relativeX = (ball.x - paddleX) / 60;
+        ball.dx = relativeX * 4;
+        ball.y = 235;
+      }
 
-        // Paddle bounce with angle based on hit position
-        if (y >= 235 && y <= 265 && Math.abs(x - paddleX) < 60) {
-          dy = -Math.abs(dy) * 1.05; // Slight speed increase
-          const relativeX = (x - paddleX) / 60;
-          dx = relativeX * 4;
-          y = 235; // Prevent ball from getting stuck
-        }
+      // Update ball position using transform (GPU accelerated)
+      if (ballElementRef.current) {
+        ballElementRef.current.style.transform = `translate3d(${ball.x - 8}px, ${ball.y - 8}px, 0)`;
+      }
 
-        setBallVel({ dx, dy });
-        return { x, y };
-      });
-    }, 16);
+      animationRef.current = requestAnimationFrame(animate);
+    };
 
-    return () => clearInterval(interval);
-  }, [ballVel, paddleX]);
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [paddleX]);
 
+  // Optimized input handling with throttling
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (canvasRef.current && !isTouching) {
+    let frameId: number;
+    let lastX = paddleX;
+    
+    const updatePaddle = (clientX: number) => {
+      if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
-        const x = Math.max(50, Math.min(350, e.clientX - rect.left));
-        setPaddleX(x);
+        const x = Math.max(50, Math.min(350, clientX - rect.left));
+        if (Math.abs(x - lastX) > 1) { // Only update if moved significantly
+          lastX = x;
+          if (frameId) cancelAnimationFrame(frameId);
+          frameId = requestAnimationFrame(() => {
+            setPaddleX(x);
+            if (paddleElementRef.current) {
+              paddleElementRef.current.style.transform = `translate3d(${x - 50}px, 0, 0)`;
+            }
+          });
+        }
       }
     };
 
+    const handleMouseMove = (e: MouseEvent) => updatePaddle(e.clientX);
     const handleTouchMove = (e: TouchEvent) => {
-      if (canvasRef.current && e.touches.length > 0) {
-        e.preventDefault();
-        const rect = canvasRef.current.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = Math.max(50, Math.min(350, touch.clientX - rect.left));
-        setPaddleX(x);
-      }
+      e.preventDefault();
+      if (e.touches.length > 0) updatePaddle(e.touches[0].clientX);
     };
 
-    const handleTouchStart = () => setIsTouching(true);
-    const handleTouchEnd = () => setIsTouching(false);
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
+    const container = canvasRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    }
     
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
+      if (frameId) cancelAnimationFrame(frameId);
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('touchmove', handleTouchMove);
+      }
     };
-  }, [isTouching]);
+  }, [paddleX]);
 
   return (
     <Box
@@ -115,8 +132,9 @@ const GamePreview = () => {
     >
       {/* Removed calendar blocks for cleaner preview */}
 
-      {/* Ball */}
-      <motion.div
+      {/* Ball - Using ref for direct DOM manipulation */}
+      <div
+        ref={ballElementRef}
         style={{
           position: 'absolute',
           width: 16,
@@ -124,16 +142,14 @@ const GamePreview = () => {
           borderRadius: '50%',
           background: 'radial-gradient(circle at 30% 30%, #fff, #ddd)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          transform: 'translate3d(192px, 142px, 0)',
+          willChange: 'transform',
         }}
-        animate={{
-          x: ballPos.x - 8,
-          y: ballPos.y - 8,
-        }}
-        transition={{ duration: 0 }}
       />
 
-      {/* Paddle */}
-      <motion.div
+      {/* Paddle - Using ref for direct DOM manipulation */}
+      <div
+        ref={paddleElementRef}
         style={{
           position: 'absolute',
           width: 100,
@@ -143,11 +159,9 @@ const GamePreview = () => {
           boxShadow: '0 4px 20px rgba(102, 126, 234, 0.6)',
           bottom: 40,
           border: '2px solid rgba(255, 255, 255, 0.3)',
+          transform: 'translate3d(150px, 0, 0)',
+          willChange: 'transform',
         }}
-        animate={{
-          x: paddleX - 50,
-        }}
-        transition={{ duration: 0 }}
       />
 
       {/* Subtle hint */}
@@ -165,41 +179,43 @@ const GamePreview = () => {
       />
     </Box>
   );
-};
+});
+
+GamePreview.displayName = 'GamePreview';
 
 export default function HomePage() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const intl = useIntl();
   const [selectedPersona, setSelectedPersona] = useState<string | null>(null);
   const [showPersonaSelect, setShowPersonaSelect] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   const personas = [
     {
       id: 'developer',
-      title: 'Developer',
+      title: intl.t('persona.developer.title'),
       icon: '👨‍💻',
-      description: 'Sprint planning, code reviews, and debugging sessions',
+      description: intl.t('persona.developer.description'),
       color: '#667eea',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     },
     {
       id: 'pm',
-      title: 'Product Manager',
+      title: intl.t('persona.pm.title'),
       icon: '📊',
-      description: 'Strategy meetings, roadmap planning, and stakeholder sync',
+      description: intl.t('persona.pm.description'),
       color: '#4ECDC4',
       gradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)',
     },
     {
       id: 'sales',
-      title: 'Sales',
+      title: intl.t('persona.sales.title'),
       icon: '💼',
-      description: 'Client calls, demos, and pipeline reviews',
+      description: intl.t('persona.sales.description'),
       color: '#FF6B6B',
       gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%)',
     },
@@ -238,11 +254,9 @@ export default function HomePage() {
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe && carouselIndex < personas.length - 1) {
-      setDirection('right');
       setCarouselIndex(carouselIndex + 1);
     }
     if (isRightSwipe && carouselIndex > 0) {
-      setDirection('left');
       setCarouselIndex(carouselIndex - 1);
     }
   };
@@ -256,31 +270,43 @@ export default function HomePage() {
         overflow: 'hidden',
       }}
     >
-      {/* Animated gradient orbs */}
+      {/* Optimized gradient orbs using CSS animations */}
       <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         {[...Array(3)].map((_, i) => (
-          <motion.div
+          <Box
             key={i}
-            style={{
+            sx={{
               position: 'absolute',
               width: 600,
               height: 600,
               borderRadius: '50%',
               background: `radial-gradient(circle, ${['#667eea20', '#4ECDC420', '#FF6B6B20'][i]} 0%, transparent 70%)`,
               filter: 'blur(40px)',
-            }}
-            animate={{
-              x: [0, 100, -100, 0],
-              y: [0, -100, 100, 0],
-            }}
-            transition={{
-              duration: 20 + i * 5,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-            initial={{
-              x: [100, 600, 300][i],
-              y: [100, 300, 500][i],
+              left: [100, 600, 300][i],
+              top: [100, 300, 500][i],
+              animation: `float${i} ${20 + i * 5}s linear infinite`,
+              willChange: 'transform',
+              '@keyframes float0': {
+                '0%': { transform: 'translate(0, 0)' },
+                '25%': { transform: 'translate(100px, -100px)' },
+                '50%': { transform: 'translate(-100px, 100px)' },
+                '75%': { transform: 'translate(-50px, -50px)' },
+                '100%': { transform: 'translate(0, 0)' },
+              },
+              '@keyframes float1': {
+                '0%': { transform: 'translate(0, 0)' },
+                '25%': { transform: 'translate(-100px, 100px)' },
+                '50%': { transform: 'translate(100px, -100px)' },
+                '75%': { transform: 'translate(50px, 50px)' },
+                '100%': { transform: 'translate(0, 0)' },
+              },
+              '@keyframes float2': {
+                '0%': { transform: 'translate(0, 0)' },
+                '25%': { transform: 'translate(50px, 50px)' },
+                '50%': { transform: 'translate(-50px, -50px)' },
+                '75%': { transform: 'translate(100px, -100px)' },
+                '100%': { transform: 'translate(0, 0)' },
+              },
             }}
           />
         ))}
@@ -314,7 +340,7 @@ export default function HomePage() {
                 mb: 2,
               }}
             >
-              Transform Your Schedule Into Fun
+              {intl.t('home.subtitle')}
             </MotionTypography>
 
             <MotionTypography
@@ -333,7 +359,7 @@ export default function HomePage() {
                 lineHeight: 1,
               }}
             >
-              Calendar Breakout
+              {intl.t('home.title')}
             </MotionTypography>
 
             <MotionTypography
@@ -351,21 +377,15 @@ export default function HomePage() {
                 fontSize: { xs: '1.1rem', sm: '1.25rem' },
               }}
             >
-              Break through your calendar events in this addictive arcade game. 
-              Turn productivity into play!
+              {intl.t('home.description')}
             </MotionTypography>
           </Box>
 
           {/* Game Preview */}
           <MotionBox
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ 
-              delay: 0.5, 
-              type: 'spring', 
-              stiffness: 100,
-              damping: 20
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
             sx={{
               display: 'flex',
               justifyContent: 'center',
@@ -425,7 +445,7 @@ export default function HomePage() {
               }}
               endIcon={<PlayArrowIcon sx={{ fontSize: 24 }} />}
             >
-              Start Playing
+              {intl.t('home.startButton')}
             </Button>
 
             <Typography
@@ -435,7 +455,7 @@ export default function HomePage() {
                 fontSize: 14,
               }}
             >
-              No signup required • Free to play • Works on all devices
+              {intl.t('home.freeToPlay')}
             </Typography>
           </MotionBox>
         </MotionBox>
@@ -489,7 +509,7 @@ export default function HomePage() {
                   fontSize: { xs: '1.75rem', sm: '2.125rem' },
                 }}
               >
-                Choose Your Persona
+                {intl.t('persona.title')}
               </Typography>
               <Typography
                 sx={{
@@ -499,7 +519,7 @@ export default function HomePage() {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                Select a role to customize your calendar experience
+                {intl.t('persona.subtitle')}
               </Typography>
 
               {/* Carousel Container */}
@@ -526,14 +546,10 @@ export default function HomePage() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={carouselIndex}
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      transition={{ 
-                        duration: 0.2, 
-                        ease: 'easeOut',
-                        opacity: { duration: 0.15 }
-                      }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                       style={{ 
                         width: '100%', 
                         height: '100%',
@@ -653,7 +669,7 @@ export default function HomePage() {
                                     letterSpacing: '0.05em',
                                   }}
                                 >
-                                  SELECTED
+                                  {intl.t('persona.selected')}
                                 </Typography>
                               </Box>
                             </motion.div>
@@ -678,7 +694,6 @@ export default function HomePage() {
                     >
                       <IconButton
                         onClick={() => {
-                          setDirection('left');
                           setCarouselIndex(Math.max(0, carouselIndex - 1));
                         }}
                         disabled={carouselIndex === 0}
@@ -708,7 +723,6 @@ export default function HomePage() {
                     >
                       <IconButton
                         onClick={() => {
-                          setDirection('right');
                           setCarouselIndex(Math.min(personas.length - 1, carouselIndex + 1));
                         }}
                         disabled={carouselIndex === personas.length - 1}
@@ -747,7 +761,6 @@ export default function HomePage() {
                   <Box
                     key={persona.id}
                     onClick={() => {
-                      setDirection(index > carouselIndex ? 'right' : 'left');
                       setCarouselIndex(index);
                     }}
                     sx={{
@@ -784,10 +797,11 @@ export default function HomePage() {
               </Typography>
 
               <Box sx={{ textAlign: 'center' }}>
-                <motion.div
-                  animate={{ 
-                    scale: selectedPersona ? 1 : 0.95,
+                <Box
+                  sx={{
+                    transform: selectedPersona ? 'scale(1)' : 'scale(0.95)',
                     opacity: selectedPersona ? 1 : 0.6,
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <Button
@@ -828,9 +842,9 @@ export default function HomePage() {
                     }}
                     endIcon={<ArrowForwardIcon sx={{ ml: 0.5 }} />}
                   >
-                    Continue to Game
+                    {intl.t('persona.continueButton')}
                   </Button>
-                </motion.div>
+                </Box>
               </Box>
             </MotionBox>
           </MotionBox>

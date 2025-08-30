@@ -31,6 +31,7 @@ import {
   getRandomPowerUpType,
   shouldDropPowerUp,
 } from '@/utils';
+import { translateCalendarEvents } from '@/utils/eventTranslations';
 
 // Components
 import { 
@@ -54,6 +55,7 @@ import {
   useGameKeyboard,
   usePowerUpEffects,
   useWindowDimensions,
+  useIntl,
 } from '@/hooks';
 
 export const CalendarBreakoutGame: FC = () => {
@@ -62,6 +64,7 @@ export const CalendarBreakoutGame: FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentDate = new Date();
   const weekStart = startOfWeek(currentDate);
+  const intl = useIntl();
 
   // Window dimensions
   const screenDimensions = useWindowDimensions();
@@ -131,6 +134,14 @@ export const CalendarBreakoutGame: FC = () => {
     height: dimensions.paddleHeight,
     speed: GAME_CONSTANTS.PADDLE.SPEED,
   });
+
+  // Translate events when component mounts or locale changes
+  useEffect(() => {
+    const selectedPersona = localStorage.getItem('selectedPersona');
+    const personaEvents = getEventsByPersona(selectedPersona);
+    const eventsToUse = personaEvents.length > 0 ? personaEvents : SAMPLE_EVENTS;
+    setEvents(translateCalendarEvents(eventsToUse, intl));
+  }, [intl]);
 
   // Update paddle position when screen resizes
   useEffect(() => {

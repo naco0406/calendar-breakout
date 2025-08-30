@@ -9,6 +9,7 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { GameState } from '@/types/game';
+import { useIntl } from '@/hooks';
 
 interface UltraHUDProps {
   gameState: GameState;
@@ -35,6 +36,7 @@ export default function UltraHUD({
 }: UltraHUDProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [forceExpanded, setForceExpanded] = useState(false);
+  const intl = useIntl();
   
   // Expand when game is not playing or when paused
   useEffect(() => {
@@ -219,7 +221,7 @@ export default function UltraHUD({
                     letterSpacing: '0.08em',
                   }}
                 >
-                  Score
+                  {intl.t('game.score')}
                 </motion.div>
               </Box>
 
@@ -284,7 +286,7 @@ export default function UltraHUD({
                     letterSpacing: '0.08em',
                   }}
                 >
-                  Lives
+                  {intl.t('game.lives')}
                 </motion.div>
               </Box>
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
 import { formatScore } from '@/utils/game';
+import { useIntl } from '@/hooks';
 
 interface VictoryOverlayProps {
   isVisible: boolean;
@@ -31,6 +32,7 @@ export const VictoryOverlay: FC<VictoryOverlayProps> = ({
 }) => {
   const [showContent, setShowContent] = useState(false);
   const [fireworks, setFireworks] = useState<Firework[]>([]);
+  const intl = useIntl();
 
   useEffect(() => {
     if (isVisible) {
@@ -214,7 +216,7 @@ export const VictoryOverlay: FC<VictoryOverlayProps> = ({
                     textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)',
                   }}
                 >
-                  VICTORY!
+                  {intl.t('game.victory')}
                 </Typography>
               </motion.div>
 
@@ -267,7 +269,7 @@ export const VictoryOverlay: FC<VictoryOverlayProps> = ({
                     mb: 1 
                   }}
                 >
-                  FINAL SCORE
+                  {intl.t('game.victoryScore')}
                 </Typography>
                 <Typography
                   variant={isMobile ? 'h3' : 'h2'}
@@ -290,7 +292,7 @@ export const VictoryOverlay: FC<VictoryOverlayProps> = ({
                       fontWeight: 500
                     }}
                   >
-                    Bonus Lives: +{lives * 500}
+                    {intl.t('game.bonusLives', { bonus: lives * 500 })}
                   </Typography>
                 )}
               </motion.div>
@@ -321,7 +323,7 @@ export const VictoryOverlay: FC<VictoryOverlayProps> = ({
                     transition: 'all 0.3s ease',
                   }}
                 >
-                  PLAY AGAIN
+                  {intl.t('game.playAgain')}
                 </Button>
               </motion.div>
             </motion.div>

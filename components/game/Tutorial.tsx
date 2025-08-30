@@ -1,11 +1,12 @@
 'use client';
 
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useMemo } from 'react';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import CloseIcon from '@mui/icons-material/Close';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import { useIntl } from '@/hooks';
 
 interface TutorialProps {
   onClose: () => void;
@@ -25,42 +26,43 @@ interface TutorialStep {
   powerups?: PowerUpInfo[];
 }
 
-const TUTORIAL_STEPS: TutorialStep[] = [
-  {
-    title: 'Welcome to Calendar Breakout!',
-    content: 'Break through your calendar events in this unique game that combines scheduling with classic breakout gameplay.',
-    highlight: null,
-  },
-  {
-    title: 'Control the Paddle',
-    content: 'Move your mouse (or touch and drag on mobile) to control the blue paddle at the bottom of the screen.',
-    highlight: 'paddle',
-  },
-  {
-    title: 'Break Calendar Events',
-    content: 'Hit the calendar events with the ball to break them and earn points. Different colors give different scores!',
-    highlight: 'events',
-  },
-  {
-    title: 'Collect Power-ups',
-    content: 'Sometimes power-ups will drop when you break events. Collect them for special abilities!',
-    highlight: 'powerups',
-    powerups: [
-      { icon: '⚡', name: 'Multi Ball', effect: 'Split ball into multiple balls (coming soon!)' },
-      { icon: '🔷', name: 'Wide Paddle', effect: 'Makes your paddle 50% wider for 10 seconds' },
-      { icon: '🐌', name: 'Slow Ball', effect: 'Slows down ball speed by 50% for 8 seconds' },
-      { icon: '❤️', name: 'Extra Life', effect: 'Adds one extra life (max 5)' },
-    ],
-  },
-  {
-    title: 'Build Combos',
-    content: 'Hit multiple events in a row without missing to build combos and multiply your score!',
-    highlight: 'combo',
-  },
-];
-
 export const Tutorial: FC<TutorialProps> = ({ onClose, isMobile }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const intl = useIntl();
+
+  const TUTORIAL_STEPS: TutorialStep[] = useMemo(() => [
+    {
+      title: intl.t('tutorial.title'),
+      content: intl.t('tutorial.subtitle'),
+      highlight: null,
+    },
+    {
+      title: intl.t('tutorial.step2.title'),
+      content: intl.t('tutorial.step2.description'),
+      highlight: 'paddle',
+    },
+    {
+      title: intl.t('tutorial.step1.title'),
+      content: intl.t('tutorial.step1.description'),
+      highlight: 'events',
+    },
+    {
+      title: intl.t('tutorial.step3.title'),
+      content: intl.t('tutorial.step3.description'),
+      highlight: 'powerups',
+      powerups: [
+        { icon: '⚡', name: intl.t('tutorial.powerups.multiball'), effect: intl.t('tutorial.powerups.multiball.effect') },
+        { icon: '🔷', name: intl.t('tutorial.powerups.widePaddle'), effect: intl.t('tutorial.powerups.widePaddle.effect') },
+        { icon: '🐌', name: intl.t('tutorial.powerups.slowBall'), effect: intl.t('tutorial.powerups.slowBall.effect') },
+        { icon: '❤️', name: intl.t('tutorial.powerups.extraLife'), effect: intl.t('tutorial.powerups.extraLife.effect') },
+      ],
+    },
+    {
+      title: intl.t('tutorial.step4.title'),
+      content: intl.t('tutorial.step4.description'),
+      highlight: 'combo',
+    },
+  ], [intl]);
 
   const handleNext = () => {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
@@ -177,7 +179,7 @@ export const Tutorial: FC<TutorialProps> = ({ onClose, isMobile }) => {
             startIcon={<NavigateBeforeIcon />}
             variant="outlined"
           >
-            Previous
+            {intl.t('tutorial.previous')}
           </Button>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -200,7 +202,7 @@ export const Tutorial: FC<TutorialProps> = ({ onClose, isMobile }) => {
             endIcon={currentStep < TUTORIAL_STEPS.length - 1 && <NavigateNextIcon />}
             variant="contained"
           >
-            {currentStep < TUTORIAL_STEPS.length - 1 ? 'Next' : 'Start Game'}
+            {currentStep < TUTORIAL_STEPS.length - 1 ? intl.t('tutorial.next') : intl.t('tutorial.startGame')}
           </Button>
         </Box>
       </Box>
